@@ -10,7 +10,7 @@ DEBUG_MODE = True
 class TiltClass:
 
 	lastSeen 	= datetime.datetime(2020, 1, 1) # declare lastSeen and set it arbitrarily to 01/01/2020 so that it has not been seen recently.
-	seenTimer	= 600				# time in seconds to have been considered to be seen recently, defaults to 10 minutes
+	seenTimer	= 60				# time in seconds to have been considered to be seen recently, defaults to 1 minute
 
 	lastUploaded	= datetime.datetime(2020, 1, 1) # declare lastUploaded and set it arbitrarily to 01/01/2020
 	needsUpload	= False				# does this data need uploading to the cloud, defaults to false.
@@ -29,38 +29,48 @@ class TiltClass:
 			print(uuid,":",name,":",uploadtime)
 		pass
 
+	def checkUUID(self,uuid):
+		if self.tiltUUID==uuid:
+			return True
+		return False
+
+	def checkName(self,name):
+		if self.tiltName==name:
+			return True
+		return False
+
 	def tempCelsius(self):				# convert temperature to celsius and return
-		return round((self.tiltTemp - 32) / 1.8, 2)
+		return round((self.tiltTemp - 32) / 1.8, 1)
 
 	def tempFahrenheit(self):			# return temperature in fahrenheit
-		return tiltTemp
+		return self.tiltTemp
 
 	def specificGravity(self):			# return specific gravity reading
-		return tiltGravity
+		return self.tiltGravity/1000
 
 	def tiltUpdate(self,temp,gravity):		# update values from passed variables, and then set lastSeen to now and needsUpload to true.
 		self.tiltTemp		= temp		
 		self.tiltGravity	= gravity
 		self.lastSeen	 	= datetime.datetime.now()
 
-		if (self.timeSinceUpload>(self.uploadTimer*60)):
+		if (self.timeSinceUpload()>(self.uploadTimer*60)):
 			needsUpload=True
 		else:
 			needsUpload=False
 
 
 	def timeSinceSeen(self):			# returns number of seconds since last update
-		timeDelta = datetime.datetime.mow() - self.lastSeen
+		timeDelta = datetime.datetime.now() - self.lastSeen
 		timeSeconds = timeDelta.total_seconds()
 		return timeSeconds
 
 	def timeSinceUpload(self):			# returns number of seconds since last upload
-		timeDelta = datetime.datetime.mow() - self.lastUploaded
+		timeDelta = datetime.datetime.now() - self.lastUploaded
 		timeSeconds = timeDelta.total_seconds()
 		return timeSeconds
 
 	def seenRecently(self):
-		if (self.timeScineSeen<self.seenTimer):
+		if (self.timeSinceSeen()<self.seenTimer):
 			return True
 		return False
 
