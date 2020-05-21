@@ -10,16 +10,16 @@ DEBUG_MODE = True
 class TiltClass:
 
 	lastSeen 	= datetime.datetime(2020, 1, 1) # declare lastSeen and set it arbitrarily to 01/01/2020 so that it has not been seen recently.
-	seenTimer	= 60				# time in seconds to have been considered to be seen recently, defaults to 1 minute
+	seenTimer	= 180				# time in seconds to have been considered to be seen recently, defaults to 3 minutes
 
 	lastUploaded	= datetime.datetime(2020, 1, 1) # declare lastUploaded and set it arbitrarily to 01/01/2020
 	needsUpload	= False				# does this data need uploading to the cloud, defaults to false.
-	uploadTimer	= 60				# time in minutes between uploads to the cloud
+	uploadTimer	= 15				# time in minutes between uploads to the cloud
 
 	tiltTemp	= 0				# declare tilt probe temp as 0, note this is in fahrenheit
 	tiltGravity	= "0.000"
 
-	def __init__(self,uuid,name,uploadtime=60):		# uploadtime is the time in MINUTES between planned uploads, defaults to 1 hour
+	def __init__(self,uuid,name,uploadtime=15):		# uploadtime is the time in MINUTES between planned uploads, defaults to 15 mins
 		self.tiltUUID = uuid
 		self.tiltName = name
 		self.uploadTimer = uploadtime
@@ -54,9 +54,13 @@ class TiltClass:
 		self.lastSeen	 	= datetime.datetime.now()
 
 		if (self.timeSinceUpload()>(self.uploadTimer*60)):
-			needsUpload=True
+			self.needsUpload=True
 		else:
-			needsUpload=False
+			self.needsUpload=False
+
+		if DEBUG_MODE:
+			print("name: ",self.tiltName,", temp: ",self.tiltTemp,", sg: ",self.tiltGravity,", upload:", self.needsUpload, " last upload:", self.lastUploaded, " time since upload:",self.timeSinceUpload())
+			
 
 
 	def timeSinceSeen(self):			# returns number of seconds since last update
@@ -68,6 +72,13 @@ class TiltClass:
 		timeDelta = datetime.datetime.now() - self.lastUploaded
 		timeSeconds = timeDelta.total_seconds()
 		return timeSeconds
+
+	def setUpload(self):
+		self.lastUploaded = datetime.datetime.now()
+		self.needsUpload = False
+
+		if DEBUG_MODE:
+			print("classTilt - setUpload: self.lastUpload:", self.lastUploaded)
 
 	def seenRecently(self):
 		if (self.timeSinceSeen()<self.seenTimer):

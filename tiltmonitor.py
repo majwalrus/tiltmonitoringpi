@@ -11,9 +11,12 @@ import bluetooth._bluetooth as bluez
 import blescan
 import tiltclass
 import threading
-
+import uploadclass
+import apikey
 
 epd = epdscreen.EPD()
+
+DEBUG_MODE = True
 
 global_UpdateImage = Image.new('1',(epdscreen.EPD_HEIGHT, epdscreen.EPD_WIDTH) ,255)
 
@@ -37,9 +40,12 @@ TILTS = {
 glob_tilts = []
 
 for key in TILTS:
-	glob_tilts.append(tiltclass.TiltClass(key, TILTS[key], 1)) # define all tilt classes, for debugging upload set to 1 minute
+	glob_tilts.append(tiltclass.TiltClass(key, TILTS[key])) # define all tilt classes
 
 glob_currentTilt = "Null"
+glob_upload = uploadclass.UploadClass()
+glob_upload.setBrewersFriendAPI(apikey.APIKEY)
+
 
 #
 # eink display initialisation
@@ -74,7 +80,8 @@ def printTilt():
 
 	displayData = getDisplayData(glob_currentTilt)
 
-	print(displayData)
+	if DEBUG_MODE:
+		print(displayData)
 
 	glob_currentTilt=displayData[0]						# set currentTilt to the new tiltname
 
@@ -140,6 +147,18 @@ def monitorTilts():
 				setTiltData(beacon['uuid'],beacon['major'],beacon['minor'])
 		time.sleep(10)
 
+def monitorUploads():
+	while True:
+		for tilt in glob_tilts:
+			if tilt.needsUpload:
+				if DEBUG_MODE:
+					print ("Tilt Needs Upload - Name: ",tilt.tiltName)
+				if glob_upload.upload(tilt.tiltName,tilt.tiltTemp,tilt.tiltGravity):
+					if DEBUG_MODE:
+						print ("Tilt Succesfully Uploaded - calling tilt.setUpload")
+					tilt.setUpload()
+	time.sleep(2)
+
 
 
 initPartial()
@@ -162,6 +181,11 @@ if __name__ == '__main__':
 	threadMonitorTilts.daemon = True
 	print("Starting monitorTilts thread ...")
 	threadMonitorTilts.start()
+
+	threadMonitorUploads = threading.Thread(target=monitorUploads)
+	threadMonitorUploads.daemon = True
+	print("Starting monitorUploads thread ...")
+	threadMonitorUploads.start()
 
 	while(True):
 		printTilt()
